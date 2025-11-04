@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Info | Daily Finance Tracker</title>
+
+  <style>
+    :root {
+      --bg: #f6fbff;
+      --card: #ffffff;
+      --accent: #4c8bf5;
+      --muted: #666;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, var(--bg), #e8f0fe);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    /* Website Name Header */
+    .site-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 1rem;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 8px rgba(76, 139, 245, 0.15);
+    }
+
+    .card {
+      background: var(--card);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 420px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    h2 {
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent);
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    #upload-label {
+      display: inline-block;
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-field {
+      text-align: left;
+      margin: 0.7rem 0;
+      background: #f5f8ff;
+      padding: 0.8rem;
+      border-radius: 0.8rem;
+      border: 1px solid #e3e9f8;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .info-value {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 0.2rem;
+    }
+
+    button {
+      margin-top: 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 0.8rem;
+      cursor: pointer;
+      transition: 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #3a72d8;
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🌟 Website Name -->
+  <div class="site-title">💰 Daily Finance Tracker</div>
+
+  <div class="card">
+    <h2>👤 Your Account Details</h2>
+
+    <img id="profilePic" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="profile-pic" alt="Profile Picture" />
+    <input type="file" id="uploadPic" accept="image/*" style="display: none;" />
+    <label id="upload-label" for="uploadPic">Change Profile Photo</label>
+
+    <div id="userDetails"></div>
+
+    <button onclick="window.location.href='registration.html'">✏️ Edit Registration Info</button>
+    <button onclick="window.location.href='index.html'">🏠 Back to Home</button>
+  </div>
+
+  <script>
+    // Load user details automatically
+    window.onload = function () {
+      const registeredUser = JSON.parse(localStorage.getItem("registeredUser"));
+      const profilePic = localStorage.getItem("profilePic");
+
+      if (!registeredUser) {
+        alert("No user data found! Please register first.");
+        window.location.href = "registration.html";
+        return;
+      }
+
+      if (profilePic) {
+        document.getElementById("profilePic").src = profilePic;
+      }
+
+      // Display user info
+      const detailsContainer = document.getElementById("userDetails");
+      detailsContainer.innerHTML = `
+        <div class="info-field">
+          <div class="info-label">Full Name:</div>
+          <div class="info-value">${registeredUser.name}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Email:</div>
+          <div class="info-value">${registeredUser.email}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Password:</div>
+          <div class="info-value">${registeredUser.password}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Phone:</div>
+          <div class="info-value">${registeredUser.phone}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Profession:</div>
+          <div class="info-value">${registeredUser.profession}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Earning Source:</div>
+          <div class="info-value">${registeredUser.earningSource}</div>
+        </div>
+      `;
+    };
+
+    // Upload profile picture
+    document.getElementById("uploadPic").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById("profilePic").src = e.target.result;
+          localStorage.setItem("profilePic", e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+

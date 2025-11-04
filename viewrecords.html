@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Records | Daily Finance Tracker</title>
+
+  <!-- Redirect if no user info -->
+  <script>
+    const user = JSON.parse(localStorage.getItem("userInfo"));
+    if (!user) {
+      window.location.href = "userinfo.html";
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #1e3a8a;
+      padding: 20px 0;
+    }
+
+    .site-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 15px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 25px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      padding: 25px 20px;
+      width: 92%;
+      max-width: 900px;
+      text-align: center;
+      animation: fadeIn 0.8s ease;
+      margin-bottom: 60px; /* leave space for fixed button */
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      margin-bottom: 10px;
+      color: #1e3a8a;
+    }
+
+    #welcomeUser {
+      color: #475569;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .filter-bar input, .filter-bar select {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #93c5fd;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .filter-bar button {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .delete-btn {
+      background: #f87171;
+      color: white;
+    }
+
+    .filter-bar button:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .summary div {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+      padding: 10px 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      font-weight: 600;
+      color: #1e3a8a;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      color: #334155;
+    }
+
+    th {
+      background: #bfdbfe;
+      color: #1e3a8a;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) { background: rgba(240,249,255,0.6); }
+    tr:hover { background: rgba(191,219,254,0.5); transition: 0.3s; }
+
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+
+    .popup button {
+      margin: 5px;
+      padding: 8px 15px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #expenseChart, #lineChart {
+      margin: 20px auto;
+      width: 100%;
+      max-width: 650px;
+    }
+
+    /* ✅ Fixed Back to Home Button */
+    .home-fixed {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #2563eb;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(37,99,235,0.4);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: 0.3s ease;
+      z-index: 1000;
+    }
+
+    .home-fixed:hover {
+      background: #1d4ed8;
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 600px) {
+      .filter-bar { flex-direction: column; }
+      .filter-bar input { width: 90%; }
+      .home-fixed { right: 15px; bottom: 15px; padding: 10px 16px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="site-title">💰 Daily Finance Tracker</div>
+
+  <div class="container">
+    <h1>📊 View Records</h1>
+    <p id="welcomeUser"></p>
+
+    <div class="filter-bar">
+      <label>From:</label>
+      <input type="date" id="fromDate">
+      <label>To:</label>
+      <input type="date" id="toDate">
+      <select id="monthFilter"></select>
+      <button class="delete-btn" id="clearAllBtn">🗑️ Delete All</button>
+    </div>
+
+    <div class="summary">
+      <div id="incomeBox">Income: ₹0</div>
+      <div id="expenseBox">Expense: ₹0</div>
+      <div id="balanceBox">Balance: ₹0</div>
+    </div>
+
+    <div class="table-container">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount (₹)</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <canvas id="lineChart"></canvas>
+    <canvas id="expenseChart"></canvas>
+  </div>
+
+  <!-- ✅ Fixed Home Button -->
+  <a href="index.html" class="home-fixed">🏠 Back to Home</a>
+
+  <!-- Popup -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup">
+      <h3>Clear all entries?</h3>
+      <p>This action cannot be undone.</p>
+      <button class="confirm" id="confirmClear">Yes</button>
+      <button class="cancel" id="cancelClear">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    if (userInfo) {
+      document.getElementById("welcomeUser").textContent =
+        `Hello, ${userInfo.name || "User"} 👋 — here’s your financial overview`;
+    }
+
+    const tableBody = document.querySelector("#recordsTable tbody");
+    let entries = JSON.parse(localStorage.getItem("financeEntries")) || [];
+
+    const incomeBox = document.getElementById("incomeBox");
+    const expenseBox = document.getElementById("expenseBox");
+    const balanceBox = document.getElementById("balanceBox");
+    const monthFilter = document.getElementById("monthFilter");
+
+    function populateMonths() {
+      const months = [...new Set(entries.map(e => e.date.slice(0,7)))];
+      months.sort().reverse();
+      monthFilter.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join("");
+    }
+
+    let chartInstance = null;
+    let lineChartInstance = null;
+
+    function renderEntries() {
+      const selectedMonth = monthFilter.value;
+      const from = document.getElementById("fromDate").value;
+      const to = document.getElementById("toDate").value;
+
+      let filtered = entries;
+      if (selectedMonth) filtered = filtered.filter(e => e.date.startsWith(selectedMonth));
+      if (from) filtered = filtered.filter(e => e.date >= from);
+      if (to) filtered = filtered.filter(e => e.date <= to);
+
+      tableBody.innerHTML = "";
+      let totalIncome = 0, totalExpense = 0;
+
+      filtered.forEach((entry, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${entry.desc}</td>
+          <td>${entry.amount.toFixed(2)}</td>
+          <td style="color:${entry.type==='income'?'#16a34a':'#dc2626'}">
+            ${entry.type==='income'?'Income 💰':'Expense 💸'}
+          </td>
+          <td>${entry.date}</td>
+          <td><button class="delete-btn" onclick="deleteEntry(${index})">Delete</button></td>
+        `;
+        tableBody.appendChild(row);
+        if(entry.type==='income') totalIncome+=entry.amount; else totalExpense+=entry.amount;
+      });
+
+      const balance = totalIncome - totalExpense;
+      incomeBox.textContent = `Income: ₹${totalIncome.toFixed(2)}`;
+      expenseBox.textContent = `Expense: ₹${totalExpense.toFixed(2)}`;
+      balanceBox.textContent = `Balance: ₹${balance.toFixed(2)}`;
+
+      renderBarChart(totalIncome,totalExpense);
+      renderLineChart(filtered);
+    }
+
+    function deleteEntry(index){
+      if(confirm("Delete this entry?")){
+        entries.splice(index,1);
+        localStorage.setItem("financeEntries",JSON.stringify(entries));
+        populateMonths(); renderEntries();
+      }
+    }
+
+    const popupOverlay = document.getElementById("popupOverlay");
+    document.getElementById("clearAllBtn").onclick = ()=> popupOverlay.style.display="flex";
+    document.getElementById("cancelClear").onclick = ()=> popupOverlay.style.display="none";
+    document.getElementById("confirmClear").onclick = ()=>{
+      localStorage.removeItem("financeEntries");
+      entries=[]; populateMonths(); renderEntries();
+      popupOverlay.style.display="none";
+      alert("All entries cleared!");
+    };
+
+    function renderBarChart(totalIncome,totalExpense){
+      const ctx=document.getElementById('expenseChart').getContext('2d');
+      if(chartInstance) chartInstance.destroy();
+      chartInstance=new Chart(ctx,{
+        type:'bar',
+        data:{labels:['Income','Expense'],datasets:[{data:[totalIncome,totalExpense],backgroundColor:['#16a34a','#dc2626']}]},
+        options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+      });
+    }
+
+    function renderLineChart(filtered){
+      const ctx=document.getElementById('lineChart').getContext('2d');
+      if(lineChartInstance) lineChartInstance.destroy();
+      const dailyData={};
+      filtered.forEach(e=>{
+        if(!dailyData[e.date]) dailyData[e.date]={income:0,expense:0};
+        dailyData[e.date][e.type]+=e.amount;
+      });
+      const dates=Object.keys(dailyData).sort();
+      const incomeValues=dates.map(d=>dailyData[d].income);
+      const expenseValues=dates.map(d=>dailyData[d].expense);
+      lineChartInstance=new Chart(ctx,{
+        type:'line',
+        data:{labels:dates,datasets:[
+          {label:'Income',data:incomeValues,borderColor:'#16a34a',tension:0.3},
+          {label:'Expense',data:expenseValues,borderColor:'#dc2626',tension:0.3}
+        ]},
+        options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}
+      });
+    }
+
+    monthFilter.addEventListener("change", renderEntries);
+    document.getElementById("fromDate").addEventListener("change", renderEntries);
+    document.getElementById("toDate").addEventListener("change", renderEntries);
+
+    populateMonths();
+    if(monthFilter.options.length>0) monthFilter.selectedIndex=0;
+    renderEntries();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
